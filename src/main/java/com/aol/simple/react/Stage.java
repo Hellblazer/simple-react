@@ -104,6 +104,7 @@ public class Stage<U> implements Seq<U> {
 			final ExecutorService executor, final RetryExecutor retrier,
 			final boolean eager) {
 
+		Seq q;
 		this.taskExecutor = executor;
 		Stream s = stream;
 		this.lastActive = new StreamWrapper(s, Optional.ofNullable(eager)
@@ -238,7 +239,8 @@ public class Stage<U> implements Seq<U> {
 	 * Will execute this phase on the RetryExecutor (default or user supplied).
 	 * The RetryExecutor can be changed via withRetrier.
 	 * 
-	 * This stage will be retried according to the configured rules. See {@link:https://github.com/nurkiewicz/async-retry} for detailed advice on how to conifugre
+	 * This stage will be retried according to the configured rules. See https://github.com/nurkiewicz/async-retry 
+	 *  for detailed advice on how to configure
 	 * 
 	 * 
 	 * @param fn Function that will be executed and retried on failure
