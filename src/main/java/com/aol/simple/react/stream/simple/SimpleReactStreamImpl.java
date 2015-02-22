@@ -48,9 +48,9 @@ public class SimpleReactStreamImpl<U> implements SimpleReactStream<U>{
 		this.taskExecutor = Optional.ofNullable(executor).orElse(
 				new ForkJoinPool(Runtime.getRuntime().availableProcessors()));
 		Stream s = stream;
-		this.lastActive = new StreamWrapper(s, true);
+		this.lastActive = new StreamWrapper(s, isEager);
 		this.errorHandler = Optional.of((e) -> log.error(e.getMessage(), e));
-		this.eager = true;
+		this.eager = isEager;
 		this.retrier = Optional.ofNullable(retrier).orElse(
 				RetryBuilder.getDefaultInstance());
 		this.waitStrategy = new LimitingMonitor();

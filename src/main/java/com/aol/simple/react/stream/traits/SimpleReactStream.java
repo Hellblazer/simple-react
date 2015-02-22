@@ -545,7 +545,7 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 	 */
 	@SafeVarargs
 	static <T> SimpleReactStream<T> of(T... values) {
-		return futureStream((Stream) Seq.of(values),true);
+		return futureStream((Stream) Seq.of(values));
 	}
 
 	/**
@@ -555,42 +555,14 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 		return futureStream((Stream) Seq.empty());
 	}
 
-	/**
-	 * @see Stream#iterate(Object, UnaryOperator)
-	 */
-	static <T> SimpleReactStream<T> iterate(final T seed,
-			final UnaryOperator<T> f) {
-		return futureStream((Stream) Seq.iterate(seed, f),false);
-	}
 
-	/**
-	 * @see Stream#generate(Supplier)
-	 */
-	static SimpleReactStream<Void> generate() {
-		return generate(() -> null);
-	}
 
-	/**
-	 * @see Stream#generate(Supplier)
-	 */
-	static <T> SimpleReactStream<T> generate(T value) {
-		return generate(() -> value);
-	}
-
-	/**
-	 * @see Stream#generate(Supplier)
-	 */
-	static <T> SimpleReactStream<T> generate(Supplier<T> s) {
-		return futureStream(Stream.generate(s),false);
-	}
-	static <T> SimpleReactStream<T> futureStream(Stream<T> stream){
-		return futureStream(stream,true);
-	}
+	
 	
 	/**
 	 * Wrap a Stream into a SimpleReactStream.
 	 */
-	static <T> SimpleReactStream<T> futureStream(Stream<T> stream,boolean eager) {
+	static <T> SimpleReactStream<T> futureStream(Stream<T> stream) {
 		if (stream instanceof SimpleReactStream)
 			return (SimpleReactStream<T>) stream;
 		if (stream instanceof FutureStream)
@@ -598,9 +570,9 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 
 		return new SimpleReactStreamImpl<T>(
 				stream.map(CompletableFuture::completedFuture),
-				Executors.newFixedThreadPool(1), RetryBuilder
+				ThreadPools.getSequential(), RetryBuilder
 						.getDefaultInstance().withScheduler(
-								Executors.newScheduledThreadPool(1)),eager);
+								ThreadPools.getSequentialRetry()),true);
 	}
 
 	/**

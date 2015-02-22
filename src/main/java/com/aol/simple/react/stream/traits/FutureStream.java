@@ -296,7 +296,29 @@ public interface FutureStream<U> extends Seq<U>,
 		return (FutureStream<U>)Seq.super.ofType(type);
 	}
 
-	
+	 static <T1, T2, R> FutureStream<R> zip(Stream<T1> left, Stream<T2> right, BiFunction<T1, T2, R> zipper) {
+	        final Iterator<T1> it1 = left.iterator();
+	        final Iterator<T2> it2 = right.iterator();
+
+	        class Zip implements Iterator<R> {
+	            @Override
+	            public boolean hasNext() {
+	            	boolean hasNext = it1.hasNext() && it2.hasNext();
+	            	if(!hasNext){
+	            		it1.close();
+	            		it2.close();
+	            	}
+	                return hasNext;
+	            }
+
+	            @Override
+	            public R next() {
+	                return zipper.apply(it1.next(), it2.next());
+	            }
+	        }
+
+	        return seq(new Zip());
+	    }
   
 	
 	/* (non-Javadoc)

@@ -5,10 +5,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,6 +18,7 @@ import org.jooq.lambda.Seq;
 
 import com.aol.simple.react.exceptions.ExceptionSoftener;
 import com.aol.simple.react.exceptions.SimpleReactProcessingException;
+import com.aol.simple.react.stream.Subscription;
 
 /**
  * Inspired by scalaz-streams async.Queue (functionally similar, but Blocking)
@@ -84,16 +84,12 @@ public class Queue<T> implements Adapter<T> {
 	 *         use queue.stream().parallel() to convert to a parallel Stream
 	 * 
 	 */
-	public Seq<T> stream() {
+	public Seq<T> stream(Subscription subscription) {
 		listeningStreams.incrementAndGet(); //assumes all Streams that ever connected, remain connected
-		return Seq.seq(closingStream(this::ensureOpen));
+		return Seq.seq(ClosingStreamGenerator.<T>closingStream(this::ensureOpen,subscription));
 	}
 
-	private Stream<T> closingStream(Supplier<T> s){
-		
-		 return StreamSupport.stream(
-	                new ClosingSpliterator(Long.MAX_VALUE, s), false);
-	}
+	
 	
 
 	/**
@@ -110,7 +106,7 @@ public class Queue<T> implements Adapter<T> {
 
 	/**
 	 * @param stream
-	 *            Input data from provided Stream
+	 *            Input data from provided Stream - blocks current thread until populated
 	 */
 	public boolean fromStream(Stream<T> stream) {
 		stream.collect(Collectors.toCollection(() -> queue));
@@ -180,6 +176,8 @@ public class Queue<T> implements Adapter<T> {
 	 * @return true if successfully added.
 	 */
 	public boolean add(T data){
+		if(!open)
+			throw new ClosedQueueException();
 		try{
 			boolean result = queue.add((T)nullSafe(data));
 			if(sizeSignal!=null)
@@ -248,4 +246,19 @@ public class Queue<T> implements Adapter<T> {
 	
 	private final NIL NILL = new NIL();
 	private static class NIL {}
+
+
+	public void closeAndRelease() {
+		close();
+		while(queue.size()>0){		//drain the queue	
+				try {
+					queue.poll(1,TimeUnit.NANOSECONDS);
+				} catch (InterruptedException e) {
+					this.softener.throwSoftenedException(e);
+				}
+			LockSupport.parkNanos(0l);
+		}
+		sizeSignal.closeAndRelease();
+		
+	}
 }

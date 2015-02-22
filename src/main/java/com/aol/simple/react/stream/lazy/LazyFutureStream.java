@@ -21,6 +21,7 @@ import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple2;
 
 import com.aol.simple.react.RetryBuilder;
+import com.aol.simple.react.stream.StreamWrapper;
 import com.aol.simple.react.stream.ThreadPools;
 import com.aol.simple.react.stream.simple.SimpleReact;
 import com.aol.simple.react.stream.traits.FutureStream;
@@ -42,9 +43,11 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 	 */
 
 	@Override
-	default Seq<U> limit(long maxSize) {
+	default LazyFutureStream<U> limit(long maxSize) {
 
-		return toQueue().stream().limit(maxSize);
+		StreamWrapper wrapper = this.getLastActive();
+
+		return this.withLastActive(wrapper.withNewStream(wrapper.stream().limit(n)));
 
 	}
 
@@ -55,9 +58,10 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 	 */
 
 	@Override
-	default Seq<U> skip(long n) {
+	default LazyFutureStream<U> skip(long n) {
+		StreamWrapper wrapper = this.getLastActive();
 
-		return toQueue().stream().skip(n);
+		return this.withLastActive(wrapper.withNewStream(wrapper.stream().skip(n)));
 
 	}
 
@@ -205,6 +209,8 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 		return futureStream((Stream) Seq.empty());
 	}
 
+	
+	
 	/**
 	 * @see Stream#iterate(Object, UnaryOperator)
 	 */

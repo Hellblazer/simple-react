@@ -2,7 +2,9 @@ package com.aol.simple.react.async;
 
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -92,6 +94,13 @@ public class Signal<T> {
 	public void close(){
 		continuous.close();
 		discrete.close();
+	}
+	
+	public void closeAndRelease() {
+		continuous.closeAndRelease(false);
+		discrete.closeAndRelease(false);
+		
+		
 	}
 
 }

@@ -1,6 +1,5 @@
 package com.aol.simple.react.stream.traits;
 
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
@@ -26,8 +25,11 @@ public interface EagerToQueue<U> extends ToQueue<U>{
 		Queue<U> queue = this.getQueueFactory().build();
 
 		
-		then(it -> queue.offer(it)).allOf(it -> queue.close());
-		
+		then(it -> populateQueue(queue,it)).allOf(it -> queue.close());
+		addOpenQueue(queue);
 		return queue;
 	}
+	
+	
+	 
 }

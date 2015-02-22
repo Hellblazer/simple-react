@@ -3,20 +3,21 @@ package com.aol.simple.react.async;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import com.aol.simple.react.async.Queue.ClosedQueueException;
+import com.aol.simple.react.stream.Subscription;
 
 
 public class ClosingSpliterator<T> implements Spliterator<T> {
         private long estimate;
+        private final Subscription subscription;
         final Supplier<T> s;
 
-        protected ClosingSpliterator(long estimate,Supplier<T> s) {
+        protected ClosingSpliterator(long estimate,Supplier<T> s, Subscription subscription) {
             this.estimate = estimate;
             this.s = s;
+            this.subscription = subscription;
         }
 
         @Override
@@ -34,10 +35,13 @@ public class ClosingSpliterator<T> implements Spliterator<T> {
 		@Override
 		public boolean tryAdvance(Consumer<? super T> action) {
 			 Objects.requireNonNull(action);
+			 if(!subscription.hasNext())
+         		return false;
             try{ 
-            	System.out.println(action.getClass());
-            	System.out.println(action);
+            	
             	action.accept(s.get());
+            	subscription.getCount().incrementAndGet();
+            	
              return true;
             }catch(ClosedQueueException e){
             	return false;
@@ -51,7 +55,7 @@ public class ClosingSpliterator<T> implements Spliterator<T> {
 		@Override
 		public Spliterator<T> trySplit() {
 			
-			return new ClosingSpliterator(estimate >>>= 1, s);
+			return new ClosingSpliterator(estimate >>>= 1, s,subscription);
 		}
 
        

@@ -1,6 +1,7 @@
 package com.aol.simple.react.stream.eager;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -15,6 +16,7 @@ import lombok.experimental.Wither;
 import lombok.extern.slf4j.Slf4j;
 
 import com.aol.simple.react.RetryBuilder;
+import com.aol.simple.react.async.Queue;
 import com.aol.simple.react.async.QueueFactories;
 import com.aol.simple.react.async.QueueFactory;
 import com.aol.simple.react.capacity.monitor.LimitingMonitor;
@@ -22,6 +24,7 @@ import com.aol.simple.react.collectors.lazy.BatchingCollector;
 import com.aol.simple.react.collectors.lazy.LazyResultConsumer;
 import com.aol.simple.react.stream.BaseSimpleReact;
 import com.aol.simple.react.stream.StreamWrapper;
+import com.aol.simple.react.stream.Subscription;
 import com.nurkiewicz.asyncretry.RetryExecutor;
 
 
@@ -42,6 +45,8 @@ public class EagerFutureStreamImpl<U> implements EagerFutureStream<U>{
 	private final LazyResultConsumer<U> lazyCollector;
 	private final QueueFactory<U> queueFactory;
 	private final BaseSimpleReact simpleReact;
+	private final Set<Queue> openQueues;
+	private final Subscription subscription;
 	/**
 	 * 
 	 * Construct a SimpleReact stage - this acts as a fluent SimpleReact builder
@@ -72,7 +77,10 @@ public class EagerFutureStreamImpl<U> implements EagerFutureStream<U>{
 		return block(collector);
 	}
 
-    
+	@Override
+    public void close(){
+    	openQueues.forEach(q -> q.closeAndRelease());
+    }
     
 	
 	

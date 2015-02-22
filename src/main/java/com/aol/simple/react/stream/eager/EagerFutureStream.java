@@ -152,6 +152,7 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	 */
 	@Override
 	default EagerFutureStream<U> limit(long maxSize) {
+		
 		return fromStream(toQueue().stream().limit(maxSize));
 	}
 

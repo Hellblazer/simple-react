@@ -52,7 +52,8 @@ public abstract class BaseSequentialSeqTest {
 		assertThat(right,hasItem(400));
 		
 		List<Integer> left = list.stream().map(t -> t.v1).collect(Collectors.toList());
-		assertThat(Arrays.asList(1,2,3,4,5,6),hasItem(left.get(0)));
+		assertThat(Arrays.asList(1,2,3,4),equalTo(left));
+		assertThat(Arrays.asList(100,200,300,400),equalTo(right));
 		
 		
 	}
@@ -68,19 +69,22 @@ public abstract class BaseSequentialSeqTest {
 		assertThat(right,hasItem(400));
 		
 		List<Integer> left = list.stream().map(t -> t.v1).collect(Collectors.toList());
-		assertThat(Arrays.asList(1,2,3,4,5,6),hasItem(left.get(0)));
+		assertThat(Arrays.asList(1,2,3,4),equalTo(left));
 
 	}
 	@Test
 	public void zipInOrder(){
-		List<Tuple2<Integer,Integer>> list =  EagerFutureStream.parallel(1,2,3,4,5,6).sorted()
-													.zip( EagerFutureStream.parallel(100,200,300,400).sorted())
+		List<Tuple2<Integer,Integer>> list =  of(1,2,3,4,5,6).sorted()
+													.zip( of(100,200,300,400).sorted())
 													.collect(Collectors.toList());
 		
 		assertThat(list.get(0).v1,is(1));
 		assertThat(list.get(0).v2,is(100));
 		
-		
+		List<Integer> left = list.stream().map(t -> t.v1).collect(Collectors.toList());
+		assertThat(Arrays.asList(1,2,3,4),equalTo(left));
+		List<Integer> right = list.stream().map(t -> t.v2).collect(Collectors.toList());
+		assertThat(Arrays.asList(100,200,300,400),equalTo(right));
 	}
 
 	@Test
@@ -146,17 +150,58 @@ public abstract class BaseSequentialSeqTest {
 		assertThat(zipped.collect(Collectors.toList()),equalTo(asList("A1", "B2", "C3")));
 	}
 
-	@Test
-	public void limitWhileTest(){
-		List<Integer> list = of(1,2,3,4,5,6).sorted().limitWhile(it -> it<4).peek(it -> System.out.println(it)).collect(Collectors.toList());
-	
-		assertThat(list,hasItem(1));
-		assertThat(list,hasItem(2));
-		assertThat(list,hasItem(3));
-		
-		
-		
-	}
+	 @Test
+	    public void testSkipWhile() {
+	        Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
+
+	        assertEquals(asList(1, 2, 3, 4, 5), s.get().skipWhile(i -> false).toList());
+	        assertEquals(asList(3, 4, 5), s.get().skipWhile(i -> i % 3 != 0).toList());
+	        assertEquals(asList(3, 4, 5), s.get().skipWhile(i -> i < 3).toList());
+	        assertEquals(asList(4, 5), s.get().skipWhile(i -> i < 4).toList());
+	        assertEquals(asList(), s.get().skipWhile(i -> true).toList());
+	    }
+
+	    @Test
+	    public void testSkipUntil() {
+	        Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
+
+	        assertEquals(asList(), s.get().skipUntil(i -> false).toList());
+	        assertEquals(asList(3, 4, 5), s.get().skipUntil(i -> i % 3 == 0).toList());
+	        assertEquals(asList(3, 4, 5), s.get().skipUntil(i -> i == 3).toList());
+	        assertEquals(asList(4, 5), s.get().skipUntil(i -> i == 4).toList());
+	        assertEquals(asList(1, 2, 3, 4, 5), s.get().skipUntil(i -> true).toList());
+	    }
+
+	    @Test
+	    public void testSkipUntilWithNulls() {
+	        Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, null, 3, 4, 5);
+
+	        assertEquals(asList(1, 2, null, 3, 4, 5), s.get().skipUntil(i -> true).toList());
+	    }
+
+	    @Test
+	    public void testLimitWhile() {
+	        Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
+
+	        assertEquals(asList(), s.get().limitWhile(i -> false).toList());
+	        assertEquals(asList(1, 2), s.get().limitWhile(i -> i % 3 != 0).toList());
+	        assertEquals(asList(1, 2), s.get().limitWhile(i -> i < 3).toList());
+	        assertEquals(asList(1, 2, 3), s.get().limitWhile(i -> i < 4).toList());
+	        assertEquals(asList(1, 2, 3, 4, 5), s.get().limitWhile(i -> true).toList());
+	    }
+
+	    @Test
+	    public void testLimitUntil() {
+	        Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
+
+	        assertEquals(asList(1, 2, 3, 4, 5), s.get().limitUntil(i -> false).toList());
+	        assertEquals(asList(1, 2), s.get().limitUntil(i -> i % 3 == 0).toList());
+	        assertEquals(asList(1, 2), s.get().limitUntil(i -> i == 3).toList());
+	        assertEquals(asList(1, 2, 3), s.get().limitUntil(i -> i == 4).toList());
+	        assertEquals(asList(), s.get().limitUntil(i -> true).toList());
+	    }
+
+	   
 
     @Test
     public void testScanLeftStringConcat() {
@@ -298,59 +343,7 @@ public abstract class BaseSequentialSeqTest {
 	        assertEquals(asList(tuple("a", 0L), tuple("b", 1L), tuple("c", 2L)), of("a", "b", "c").zipWithIndex().toList());
 	    }
 
-	   
-	    @Test
-	    public void testSkipWhile() {
-	    	 Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
-
-	         assertEquals(asList(1, 2, 3, 4, 5), s.get().skipWhile(i -> false).toList());
-	         assertEquals(asList(3, 4, 5), s.get().skipWhile(i -> i % 3 != 0).toList());
-	         assertEquals(asList(3, 4, 5), s.get().skipWhile(i -> i < 3).toList());
-	         assertEquals(asList(4, 5), s.get().skipWhile(i -> i < 4).toList());
-	         assertEquals(asList(), s.get().skipWhile(i -> true).toList());
-	    }
-
-	    @Test
-	    public void testSkipUntil() {
-	    	Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
-
-	        assertEquals(asList(), s.get().skipUntil(i -> false).toList());
-	        assertEquals(asList(3, 4, 5), s.get().skipUntil(i -> i % 3 == 0).toList());
-	        assertEquals(asList(3, 4, 5), s.get().skipUntil(i -> i == 3).toList());
-	        assertEquals(asList(4, 5), s.get().skipUntil(i -> i == 4).toList());
-	        assertEquals(asList(1, 2, 3, 4, 5), s.get().skipUntil(i -> true).toList());
-		  }
-
-	    @Test
-	    public void testSkipUntilWithNulls() {
-	    	 Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, null, 3, 4, 5);
-
-	         assertEquals(asList(1, 2, null, 3, 4, 5), s.get().skipUntil(i -> true).toList());
-	    }
-
-	    @Test
-	    public void testLimitWhile() {
-	    	 Supplier<Seq<Integer>> s = () -> Seq.of(1, 2, 3, 4, 5);
-
-	         assertEquals(asList(), s.get().limitWhile(i -> false).toList());
-	         assertEquals(asList(1, 2), s.get().limitWhile(i -> i % 3 != 0).toList());
-	         assertEquals(asList(1, 2), s.get().limitWhile(i -> i < 3).toList());
-	         assertEquals(asList(1, 2, 3), s.get().limitWhile(i -> i < 4).toList());
-	         assertEquals(asList(1, 2, 3, 4, 5), s.get().limitWhile(i -> true).toList());
-	    }
-
-	    @Test
-	    public void testLimitUntil() {
-	    	 assertEquals(asList(1, 2, 3, 4, 5),of(1, 2, 3, 4, 5).limitUntil(i -> false).toList());
-	         assertEquals(asList(1, 2), of(1, 2, 3, 4, 5).limitUntil(i -> i % 3 == 0).toList());
-	         assertEquals(asList(1, 2), of(1, 2, 3, 4, 5).limitUntil(i -> i == 3).toList());
-	         assertEquals(asList(1, 2, 3), of(1, 2, 3, 4, 5).limitUntil(i -> i == 4).toList());
-	         assertEquals(asList(), of(1, 2, 3, 4, 5).limitUntil(i -> true).toList());
-
-	        
-	        
-	        assertEquals(asList(), of(1, 2, 3, 4, 5).limitUntil(i -> true).toList());
-	    }
+	
 
 	    @Test
 	    public void testLimitUntilWithNulls() {
