@@ -45,9 +45,10 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 	@Override
 	default LazyFutureStream<U> limit(long maxSize) {
 
+		this.
 		StreamWrapper wrapper = this.getLastActive();
 
-		return this.withLastActive(wrapper.withNewStream(wrapper.stream().limit(n)));
+		return this.withLastActive(wrapper.withNewStream(wrapper.stream().limit(maxSize)));
 
 	}
 

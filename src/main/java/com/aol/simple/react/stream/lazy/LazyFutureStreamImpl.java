@@ -22,6 +22,7 @@ import com.aol.simple.react.collectors.lazy.BatchingCollector;
 import com.aol.simple.react.collectors.lazy.LazyResultConsumer;
 import com.aol.simple.react.stream.BaseSimpleReact;
 import com.aol.simple.react.stream.StreamWrapper;
+import com.aol.simple.react.stream.Subscription;
 import com.nurkiewicz.asyncretry.RetryExecutor;
 
 @Wither
@@ -42,6 +43,7 @@ public class LazyFutureStreamImpl<U> implements LazyFutureStream<U>{
 	private final LazyResultConsumer<U> lazyCollector;
 	private final QueueFactory<U> queueFactory;
 	private final BaseSimpleReact simpleReact;
+	private final Subscription subscription;
 	
 	LazyFutureStreamImpl(final Stream<CompletableFuture<U>> stream,
 			final ExecutorService executor, final RetryExecutor retrier) {
@@ -58,6 +60,7 @@ public class LazyFutureStreamImpl<U> implements LazyFutureStream<U>{
 		this.waitStrategy = new LimitingMonitor();
 		this.lazyCollector = new BatchingCollector<>();
 		this.queueFactory = QueueFactories.boundedQueue(1000);
+		this.subscription = new Subscription();
 	}
 
 	
