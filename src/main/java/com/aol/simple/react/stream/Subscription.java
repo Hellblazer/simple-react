@@ -37,7 +37,7 @@ public class Subscription {
 		long limit = valuesToRight(queue).stream().reduce((acc,next)-> Math.min(acc, next)).get();
 		if(queueCount < limit+1)
 			return true;
-		throw new ClosedQueueException();
+		return false;
 		
 	}
 	private List<Long> valuesToRight(Queue queue) {

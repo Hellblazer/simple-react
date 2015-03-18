@@ -13,6 +13,7 @@ public class ClosingSpliterator<T> implements Spliterator<T> {
         private long estimate;
         private final Subscription subscription;
         final Supplier<T> s;
+        private final Queue queue;
 
         protected ClosingSpliterator(long estimate,Supplier<T> s, Subscription subscription) {
             this.estimate = estimate;
@@ -35,12 +36,12 @@ public class ClosingSpliterator<T> implements Spliterator<T> {
 		@Override
 		public boolean tryAdvance(Consumer<? super T> action) {
 			 Objects.requireNonNull(action);
-			 if(!subscription.hasNext())
+			 if(!subscription.shouldContinue(queue))
          		return false;
             try{ 
             	
             	action.accept(s.get());
-            	subscription.getCount().incrementAndGet();
+            	
             	
              return true;
             }catch(ClosedQueueException e){

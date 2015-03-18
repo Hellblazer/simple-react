@@ -46,7 +46,7 @@ public class EagerFutureStreamImpl<U> implements EagerFutureStream<U>{
 	private final QueueFactory<U> queueFactory;
 	private final BaseSimpleReact simpleReact;
 	private final Set<Queue> openQueues;
-	private final Subscription subscription;
+	
 	/**
 	 * 
 	 * Construct a SimpleReact stage - this acts as a fluent SimpleReact builder
