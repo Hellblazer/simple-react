@@ -159,40 +159,27 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 	}
 	
 	
-	
-	default <R> SimpleReactStream<R> fromStream(Stream<R> stream) {
-		
-		
-		return (SimpleReactStream<R>) this.withLastActive(getLastActive()
-				.withNewStream(stream.map(CompletableFuture::completedFuture)));
-	}
-	
-
 	/**
-	 * Construct a SimpleReactStream from provided Stream of CompletableFutures
+	 * Construct a SimpleReactStream from provided Stream 
 	 * 
 	 * @param stream JDK Stream to construct new SimpleReactStream from
 	 * @return SimpleReactStream
 	 */
+	default <R> SimpleReactStream<R> fromStream(Stream<R> stream) {
+		
+		
+		return (SimpleReactStream<R>) this.withLastActive(getLastActive()
+				.withNewStream(stream.map(ToCompletableFuture::completedFuture)));
+	}
+	
 	default <R> SimpleReactStream<R> fromStreamCompletableFuture(
 			Stream<CompletableFuture<R>> stream) {
-		Stream noType = stream;
-		return (SimpleReactStream<R>) this.withLastActive(getLastActive()
-				.withNewStream(noType));
-	}
-	default <R> SimpleReactStream<R> fromStreamCompletableFutureReplace(
-			Stream<CompletableFuture<R>> stream) {
-		Stream noType = stream;
-		return (SimpleReactStream<R>) this.withLastActive(getLastActive()
-				.withStream(noType));
-	}
 
-	default <R> SimpleReactStream<R> fromListCompletableFuture(
-			List<CompletableFuture<R>> list) {
-		List noType = list;
-		return (SimpleReactStream<R>) this.withLastActive(getLastActive()
-				.withList(noType));
+		return (SimpleReactStream) StreamUtils
+				.fromStreamCompletableFuture(this,this.getLastActive(),stream);
 	}
+	
+	
 	
 	/**
 	 * React <b>then</b>
@@ -518,7 +505,7 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 			if(t instanceof CompletionException)
 				throwable = ((Exception)t).getCause();
 			
-			SimpleReactFailedStageException simpleReactException = assureSimpleReactException( throwable);//exceptions from initial supplier won't be wrapper in SimpleReactFailedStageException
+			SimpleReactFailedStageException simpleReactException = StreamUtils.assureSimpleReactException( throwable);//exceptions from initial supplier won't be wrapper in SimpleReactFailedStageException
 			if(exceptionClass.isAssignableFrom(simpleReactException.getCause().getClass()))
 		    	return ((Function) fn).apply(simpleReactException);
 		    throw simpleReactException;
@@ -529,12 +516,7 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 	}
 	
 
-	static SimpleReactFailedStageException assureSimpleReactException(
-			Throwable throwable){
-		if(throwable instanceof SimpleReactFailedStageException)
-			return (SimpleReactFailedStageException)throwable;
-		return new SimpleReactFailedStageException(null,(throwable));
-	}
+	
 	/**
 	 * React <b>capture</b>
 	 * 
@@ -692,38 +674,7 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 				.retrier(RetryBuilder.getDefaultInstance().withScheduler(ThreadPools.getCommonFreeThreadRetry())).build();
 	}
 
-	/**
-	 * @param executor
-	 *            Executor this SimpleReact instance will use to execute
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static SimpleReact simple(ExecutorService executor) {
-		return new SimpleReact(executor);
-	}
-
-	/**
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static SimpleReact simple(RetryExecutor retry) {
-		return SimpleReact.builder().retrier(retry).build();
-	}
-
-	/**
-	 * @param executor
-	 *            Executor this SimpleReact instance will use to execute
-	 *            concurrent tasks.
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static SimpleReact simple(ExecutorService executor, RetryExecutor retry) {
-		return SimpleReact.builder().executor(executor).retrier(retry).build();
-	}
+	
 
 	/**
 	 * @see Stream#of(Object)
@@ -766,7 +717,7 @@ public interface SimpleReactStream<U> extends LazyStream<U>,
 				.getDefaultInstance().withScheduler(
 						ThreadPools.getSequentialRetry()),false);
 		return new SimpleReactStreamImpl<T>(sr,
-				stream.map(CompletableFuture::completedFuture),null);
+				stream.map(ToCompletableFuture::completedFuture),null);
 	}
 
 	/**

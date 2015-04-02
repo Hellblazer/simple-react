@@ -1,4 +1,4 @@
-package com.aol.simple.react.stream.lazy;
+package com.aol.simple.react.stream.traits;
 
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -41,11 +42,9 @@ import com.aol.simple.react.exceptions.SimpleReactFailedStageException;
 import com.aol.simple.react.stream.CloseableIterator;
 import com.aol.simple.react.stream.StreamWrapper;
 import com.aol.simple.react.stream.ThreadPools;
-import com.aol.simple.react.stream.eager.EagerFutureStream;
 import com.aol.simple.react.stream.eager.EagerReact;
-import com.aol.simple.react.stream.traits.FutureStream;
-import com.aol.simple.react.stream.traits.LazyToQueue;
-import com.aol.simple.react.stream.traits.SimpleReactStream;
+import com.aol.simple.react.stream.lazy.LazyFutureStreamImpl;
+import com.aol.simple.react.stream.lazy.LazyReact;
 import com.nurkiewicz.asyncretry.RetryExecutor;
 
 /**
@@ -97,8 +96,7 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
      * @throws NullPointerException if the element selected is null
      */
     default Optional<U> findFirst(){
-    	List<U> results = new ArrayList<>();
-    	this.run(()->results);
+    	List<U> results = this.run(Collectors.toList());
     	if(results.size()==0)
     		return Optional.empty();
     	return Optional.of(results.get(0));
@@ -715,8 +713,8 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 	default <R> LazyFutureStream<R> fromStreamCompletableFuture(
 			Stream<CompletableFuture<R>> stream) {
 
-		return (LazyFutureStream) FutureStream.super
-				.fromStreamCompletableFuture(stream);
+		return (LazyFutureStream) StreamUtils
+				.fromStreamCompletableFuture(this,this.getLastActive(),stream);
 	}
 
 	/**
@@ -1163,38 +1161,7 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 				.build();
 	}
 
-	/**
-	 * @param executor
-	 *            Executor this SimpleReact instance will use to execute
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static LazyReact lazy(ExecutorService executor) {
-		return new LazyReact(executor);
-	}
-
-	/**
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static LazyReact lazy(RetryExecutor retry) {
-		return LazyReact.builder().retrier(retry).build();
-	}
-
-	/**
-	 * @param executor
-	 *            Executor this SimpleReact instance will use to execute
-	 *            concurrent tasks.
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return Lazy SimpleReact for handling infinite streams
-	 */
-	public static LazyReact lazy(ExecutorService executor, RetryExecutor retry) {
-		return LazyReact.builder().executor(executor).retrier(retry).build();
-	}
+	
 
 	/**
 	 * @see Stream#of(Object)
@@ -1466,7 +1433,7 @@ public interface LazyFutureStream<U> extends FutureStream<U>, LazyToQueue<U> {
 	 * @return Self (current stage)
 	 */
 	default LazyFutureStream<U> self(Consumer<FutureStream<U>> consumer) {
-		return ( LazyFutureStream<U>)FutureStream.super.self(consumer);
+		return (com.aol.simple.react.stream.traits.LazyFutureStream<U>)FutureStream.super.self(consumer);
 	}
 
 

@@ -18,7 +18,7 @@ import org.mockito.internal.util.collections.Sets;
 
 import com.aol.simple.react.async.Queue;
 import com.aol.simple.react.async.Signal;
-import com.aol.simple.react.stream.lazy.LazyFutureStream;
+import com.aol.simple.react.stream.traits.LazyFutureStream;
 import com.aol.simple.react.threads.SequentialElasticPools;
 import com.google.common.collect.Lists;
 
@@ -56,12 +56,16 @@ public class PushableStreamTest {
 
 	@Test
 	public void testStream() {
+		
+		
 		PushableStream<Integer> pushable = new PushableStreamBuilder()
 				.pushableStream();
 		pushable.getInput().add(10);
 		pushable.getInput().close();
 		assertThat(pushable.getStream().collect(Collectors.toList()),
 				hasItem(10));
+		
+		
 	}
 
 	@Test

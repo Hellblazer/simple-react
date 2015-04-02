@@ -1,4 +1,4 @@
-package com.aol.simple.react.stream.eager;
+package com.aol.simple.react.stream.traits;
 
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -35,12 +35,10 @@ import com.aol.simple.react.async.Queue;
 import com.aol.simple.react.exceptions.SimpleReactFailedStageException;
 import com.aol.simple.react.stream.StreamWrapper;
 import com.aol.simple.react.stream.ThreadPools;
-import com.aol.simple.react.stream.lazy.LazyFutureStream;
+import com.aol.simple.react.stream.eager.EagerFutureStreamImpl;
+import com.aol.simple.react.stream.eager.EagerReact;
 import com.aol.simple.react.stream.lazy.LazyReact;
 import com.aol.simple.react.stream.simple.SimpleReact;
-import com.aol.simple.react.stream.traits.EagerToQueue;
-import com.aol.simple.react.stream.traits.FutureStream;
-import com.aol.simple.react.stream.traits.SimpleReactStream;
 import com.nurkiewicz.asyncretry.RetryExecutor;
 
 /**
@@ -583,6 +581,7 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 		return (EagerFutureStream) FutureStream.super.fromStream(stream);
 	}
 
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -594,9 +593,9 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	default <R> EagerFutureStream<R> fromStreamCompletableFuture(
 			Stream<CompletableFuture<R>> stream) {
 
-		return (EagerFutureStream) FutureStream.super
-				.fromStreamCompletableFuture(stream);
-	}
+		return (EagerFutureStream) StreamUtils
+				.fromStreamCompletableFuture(this,getLastActive(),stream);
+	} 
 
 	/*
 	 * Take the first (maxSize) completed results from this stage of the Stream
@@ -1167,8 +1166,8 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	default <R> EagerFutureStream<R> fromListCompletableFuture(
 			List<CompletableFuture<R>> list) {
 
-		return (EagerFutureStream) FutureStream.super
-				.fromListCompletableFuture(list);
+		return (EagerFutureStream) StreamUtils
+				.fromListCompletableFuture(this,this.getLastActive(),list);
 	}
 
 	/**
@@ -1216,8 +1215,8 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	 * @return eager EagerReact instance
 	 */
 	public static EagerReact parallelBuilder(int parallelism) {
-		return eagerBuilder(new ForkJoinPool(parallelism),
-				new RetryBuilder().parallelism(parallelism));
+		return new EagerReact(new ForkJoinPool(parallelism),
+				new RetryBuilder().parallelism(parallelism),true);
 	}
 
 	/**
@@ -1269,40 +1268,7 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 				.build();
 	}
 
-	/**
-	 * @param executor
-	 *            Executor this EagerReact instance will use to execute
-	 *            concurrent tasks.
-	 * @return EagerReact for handling finite streams
-	 */
-	public static EagerReact eagerBuilder(ExecutorService executor) {
-		return new EagerReact(executor);
-	}
-
-	/**
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return EagerReact for handling finite streams
-	 */
-	public static EagerReact eagerBuilder(RetryExecutor retry) {
-		return EagerReact.builder().retrier(retry).build();
-	}
-
-	/**
-	 * @param executor
-	 *            Executor this SimpleReact instance will use to execute
-	 *            concurrent tasks.
-	 * @param retry
-	 *            RetryExecutor this SimpleReact instance will use to retry
-	 *            concurrent tasks.
-	 * @return EagerReact for handling finite streams
-	 */
-	public static EagerReact eagerBuilder(ExecutorService executor,
-			RetryExecutor retry) {
-		return EagerReact.builder().executor(executor).retrier(retry).build();
-	}
-
+	
 	/**
 	 * @see Stream#of(Object)
 	 */
@@ -1332,8 +1298,8 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 		if (stream instanceof FutureStream)
 			return (EagerFutureStream<T>) stream;
 		EagerReact er = new EagerReact(
-		ThreadPools.getSequential(), RetryBuilder.getDefaultInstance()
-		.withScheduler(ThreadPools.getSequentialRetry()),false);
+				ThreadPools.getSequential(), RetryBuilder.getDefaultInstance()
+						.withScheduler(ThreadPools.getSequentialRetry()),false);
 		
 		return new EagerFutureStreamImpl<T>(er,
 				stream.map(CompletableFuture::completedFuture));
@@ -1422,7 +1388,7 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	 * @return Self (current stage)
 	 */
 	default EagerFutureStream<U> self(Consumer<FutureStream<U>> consumer) {
-		return ( EagerFutureStream<U>)FutureStream.super.self(consumer);
+		return (com.aol.simple.react.stream.traits.EagerFutureStream<U>)FutureStream.super.self(consumer);
 	}
 
 	

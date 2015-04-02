@@ -23,25 +23,25 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import com.aol.simple.react.extractors.Extractors;
-import com.aol.simple.react.stream.lazy.LazyFutureStream;
 import com.aol.simple.react.stream.simple.SimpleReact;
+import com.aol.simple.react.stream.traits.LazyFutureStream;
 import com.google.common.collect.ImmutableMap;
 
 public class AllOfTest {
 
 	@Test
 	public void allOf(){
-		List<ImmutableMap<String,Collection<Integer>>> result = new ArrayList<>();
-		Supplier s = ()->result;
-		
-		 LazyFutureStream.sequentialBuilder().react(()->1,()->2,()->3)
-		 									 .map(it->it+100)
-		 									 .peek(System.out::println)
-		 									 .allOf(c-> { System.out.println(c);return ImmutableMap.of("numbers",c);})
-		 									 .peek(map -> System.out.println(map))
-		 									 .run(s);
-		 
-		 assertThat(result.size(),is(1));
+		List<ImmutableMap<String, List<Integer>>> result = LazyFutureStream.sequentialBuilder()
+																.react(() -> 1, () -> 2, () -> 3)
+																.map(it -> it + 100)
+																.peek(System.out::println)
+																.allOf((List<Integer> c) -> {
+																	System.out.println(c);
+																	return ImmutableMap.of("numbers", c);
+																}).peek(map -> System.out.println(map))
+																.run(Collectors.toList());
+
+		assertThat(result.size(), is(1));
 	}
 	
 	@Test

@@ -1,6 +1,6 @@
 package com.aol.simple.react.async;
 
-import static com.aol.simple.react.stream.eager.EagerFutureStream.parallel;
+import static com.aol.simple.react.stream.traits.EagerFutureStream.parallel;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,21 +57,19 @@ public class TopicTest {
 	
 		
 			
+		Supplier s1 = ()-> parallel()
+				.fromStream(topic.stream())
+				.then(it -> it + "*")
+				.run(Collectors.toList() );
+		Supplier s2 = ()->parallel()
+				.fromStream(topic.stream())
+				.then(it -> it + "!")
+				.peek(it->sleep(10)) //make sure takes slightly longer to complete
+				.run( Collectors.toSet() );
 		//read from the topic concurrently in 2 threads
 		
 		SimpleReactStream<Collection<String>> stage = new SimpleReact(new ForkJoinPool(2))
-			.react(()->parallel()
-				.fromStream(topic.stream())
-				.then(it -> it + "*")
-				.<Collection<String>>run(()->new ArrayList<>() ),
-				
-				()->parallel()
-					.fromStream(topic.stream())
-					.then(it -> it + "!")
-					.peek(it->sleep(10)) //make sure takes slightly longer to complete
-					.<Collection<String>>run( ()->new HashSet<>() )
-				
-				);
+			.react(s1,s2);
 		 
 		sleep(50);//make sure streams are set up
 		topic.fromStream(input);
@@ -149,13 +148,13 @@ public class TopicTest {
 			.react(()->parallel()
 				.fromStream(topic.streamCompletableFutures())
 				.then(it -> it + "*")
-				.<Collection<String>>run(()->new ArrayList<>() ),
+				.run(Collectors.toSet() ),
 				
 				()->parallel()
 					.fromStream(topic.streamCompletableFutures())
 					.then(it -> it + "!")
 				
-					.<Collection<String>>run( ()->new HashSet<>() )
+					.run(Collectors.toList() )
 				
 				);
 		
@@ -194,13 +193,13 @@ public class TopicTest {
 			.react(()->parallel()
 				.fromStream(topic.stream())
 				.then(it -> it + "*")
-				.<Collection<String>>run(()->new ArrayList<>() ),
+				.run(Collectors.toList() ),
 				
 				()->parallel()
 					.fromStream(topic.stream())
 					.then(it -> it + "!")
 				
-					.<Collection<String>>run( ()->new HashSet<>() )
+					.run( Collectors.toSet())
 				
 				);
 		
