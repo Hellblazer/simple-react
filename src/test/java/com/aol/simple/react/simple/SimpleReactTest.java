@@ -30,10 +30,8 @@ import java.util.stream.Collectors;
 import org.junit.Test;
 
 import com.aol.simple.react.extractors.Extractors;
+import com.aol.simple.react.stream.lazy.LazyReact;
 import com.aol.simple.react.stream.simple.SimpleReact;
-import com.aol.simple.react.stream.traits.EagerFutureStream;
-import com.aol.simple.react.stream.traits.FutureStream;
-import com.aol.simple.react.stream.traits.LazyFutureStream;
 import com.aol.simple.react.stream.traits.SimpleReactStream;
 import com.google.common.collect.Lists;
 
@@ -90,7 +88,7 @@ public class SimpleReactTest {
 	public void testLazyParameters(){
 		
 		ForkJoinPool fjp = new ForkJoinPool();
-		assertThat(LazyFutureStream.lazy(fjp).getExecutor(),is(fjp));
+		assertThat(new LazyReact(fjp).getExecutor(),is(fjp));
 	}
 	@Test
 	public void testEagetParameters(){
