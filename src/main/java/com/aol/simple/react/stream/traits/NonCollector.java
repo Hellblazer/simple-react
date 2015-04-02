@@ -12,7 +12,7 @@ class NonCollector<T, A, R> implements Collector<T, A, R> {
 	@Override
 	public Supplier<A> supplier() {
 		
-		return null;
+		return ()->null;
 	}
 
 	@Override
