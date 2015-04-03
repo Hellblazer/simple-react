@@ -13,7 +13,7 @@ public class ThreadPools {
 	private static final ExecutorService commonFreeThread =  Executors.newFixedThreadPool(1);
 	
 	@Getter
-	private static final ExecutorService commonLazyExecutor = new ForkJoinPool(1);
+	private static final ExecutorService commonLazyExecutor = Executors.newFixedThreadPool(1);
 	
 	@Getter
 	private static final ScheduledExecutorService commonFreeThreadRetry = Executors.newScheduledThreadPool(1);
@@ -28,13 +28,14 @@ public class ThreadPools {
 	public static ExecutorService getStandard() {
 		if(useCommon)
 			return ForkJoinPool.commonPool();
-		return new ForkJoinPool(Runtime.getRuntime().availableProcessors());
+		return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+				
 	}
 	public static ExecutorService getSequential() {
 		if(useCommon)
 			return commonFreeThread;
 		else
-			return new ForkJoinPool(1);
+			return Executors.newFixedThreadPool(1);
 	}
 	public static ScheduledExecutorService getSequentialRetry() {
 		if(useCommon)
@@ -52,6 +53,6 @@ public class ThreadPools {
 		if(useCommon)
 			return commonLazyExecutor;
 		else
-			return  new ForkJoinPool(1); 
+			return  Executors.newFixedThreadPool(1);
 	}
 }

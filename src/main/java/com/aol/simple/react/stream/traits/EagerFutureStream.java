@@ -770,7 +770,7 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 	default EagerFutureStream<U> sliceFutures(long from, long to) {
 		List noType = Seq.seq(getLastActive().stream()).slice(from, to)
 				.collect(Collectors.toList());
-		return fromListCompletableFuture(noType);
+		return fromListOfFutures(noType);
 	}
 
 	@Override
@@ -1135,8 +1135,8 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 				.seq((Stream<CompletableFuture<U>>) stream).splitAt(position);
 
 		return new Tuple2(
-				fromListCompletableFuture(split.v1.collect(Collectors.toList())),
-				fromListCompletableFuture(split.v2.collect(Collectors.toList())));
+				fromListOfFutures(split.v1.collect(Collectors.toList())),
+				fromListOfFutures(split.v2.collect(Collectors.toList())));
 	}
 
 	/**
@@ -1162,11 +1162,11 @@ public interface EagerFutureStream<U> extends FutureStream<U>, EagerToQueue<U> {
 		return (Tuple2<EagerFutureStream<U>, EagerFutureStream<U>>) split;
 	}
 
-	default <R> EagerFutureStream<R> fromListCompletableFuture(
+	default <R> EagerFutureStream<R> fromListOfFutures(
 			List<CompletableFuture<R>> list) {
 
 		return (EagerFutureStream) FutureStream.super
-				.fromListCompletableFuture(list);
+				.fromListOfFutures(list);
 	}
 
 	/**
